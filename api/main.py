@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
 from pathlib import Path
@@ -7,6 +8,13 @@ from pydantic import BaseModel, Field
 from api.database import init_database, list_predictions, save_prediction
 
 app = FastAPI(title="API Diabetes", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 init_database()
 
 
