@@ -1,37 +1,52 @@
 [
   {
     "model":"Arbol de Decision",
-    "accuracy":0.7922077922,
-    "precision":0.7037037037,
-    "recall":0.7037037037,
-    "f1":0.7037037037
-  },
-  {
-    "model":"SVM",
-    "accuracy":0.7532467532,
-    "precision":0.66,
-    "recall":0.6111111111,
-    "f1":0.6346153846
+    "accuracy":0.7597402597,
+    "precision":0.6393442623,
+    "recall":0.7222222222,
+    "f1":0.6782608696,
+    "roc_auc":0.7622222222,
+    "cv_recall_mean":0.5554817276,
+    "cv_recall_std":0.0906532451
   },
   {
     "model":"Random Forest",
     "accuracy":0.7467532468,
-    "precision":0.6530612245,
-    "recall":0.5925925926,
-    "f1":0.6213592233
+    "precision":0.6595744681,
+    "recall":0.5740740741,
+    "f1":0.6138613861,
+    "roc_auc":0.8167592593,
+    "cv_recall_mean":0.6028792913,
+    "cv_recall_std":0.012102836
+  },
+  {
+    "model":"SVM",
+    "accuracy":0.7402597403,
+    "precision":0.652173913,
+    "recall":0.5555555556,
+    "f1":0.6,
+    "roc_auc":0.7963888889,
+    "cv_recall_mean":0.5841638981,
+    "cv_recall_std":0.0572333535
   },
   {
     "model":"KNN",
-    "accuracy":0.7467532468,
-    "precision":0.6595744681,
-    "recall":0.5740740741,
-    "f1":0.6138613861
+    "accuracy":0.7272727273,
+    "precision":0.625,
+    "recall":0.5555555556,
+    "f1":0.5882352941,
+    "roc_auc":0.79,
+    "cv_recall_mean":0.5699889258,
+    "cv_recall_std":0.0387843617
   },
   {
     "model":"Regresion Logistica",
-    "accuracy":0.7142857143,
-    "precision":0.6086956522,
-    "recall":0.5185185185,
-    "f1":0.56
+    "accuracy":0.7077922078,
+    "precision":0.6,
+    "recall":0.5,
+    "f1":0.5454545455,
+    "roc_auc":0.812962963,
+    "cv_recall_mean":0.5747508306,
+    "cv_recall_std":0.0227277493
   }
 ]

@@ -1,0 +1,17 @@
+{
+  "labels": [
+    "no_diabetes",
+    "diabetes"
+  ],
+  "matrix": [
+    [
+      78,
+      22
+    ],
+    [
+      15,
+      39
+    ]
+  ],
+  "threshold": 0.5
+}

@@ -1,0 +1,68 @@
+{
+  "model_name": "Arbol de Decision",
+  "model_version": "1.0.0",
+  "trained_at": "2026-07-10T14:33:25.152963+00:00",
+  "dataset_name": "Pima Indians Diabetes Dataset",
+  "target_column": "Outcome",
+  "feature_order": [
+    "Pregnancies",
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI",
+    "DiabetesPedigreeFunction",
+    "Age"
+  ],
+  "threshold": 0.5,
+  "random_state": 42,
+  "test_size": 0.2,
+  "scikit_learn_version": "1.8.0",
+  "metrics": {
+    "model": "Arbol de Decision",
+    "accuracy": 0.7597402597402597,
+    "precision": 0.639344262295082,
+    "recall": 0.7222222222222222,
+    "f1": 0.6782608695652174,
+    "roc_auc": 0.7622222222222222,
+    "cv_recall_mean": 0.5554817275747508,
+    "cv_recall_std": 0.09065324505351403
+  },
+  "selection_strategy": "Se prioriza recall de la clase positiva por tratarse de una herramienta preventiva; se desempata con F1, precision y ROC-AUC para mantener equilibrio entre sensibilidad y falsos positivos.",
+  "missing_value_strategy": {
+    "zero_as_missing_columns": [
+      "Glucose",
+      "BloodPressure",
+      "SkinThickness",
+      "Insulin",
+      "BMI"
+    ],
+    "replacement": "Los ceros biologicamente improbables se reemplazan por valores faltantes.",
+    "imputation": "Mediana dentro de cada pipeline para evitar fuga de datos.",
+    "scaling": "StandardScaler solo en modelos sensibles a escala."
+  },
+  "confusion_matrix": {
+    "labels": [
+      "no_diabetes",
+      "diabetes"
+    ],
+    "matrix": [
+      [
+        78,
+        22
+      ],
+      [
+        15,
+        39
+      ]
+    ],
+    "threshold": 0.5
+  },
+  "artifacts": {
+    "model": "model/model.pkl",
+    "metrics_csv": "model/metrics.csv",
+    "metrics_json": "model/metrics.json",
+    "confusion_matrix": "model/confusion_matrix.json",
+    "roc_curve": "model/roc_curve.csv"
+  }
+}

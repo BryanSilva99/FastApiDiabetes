@@ -2,4 +2,12 @@ env/
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example
 data/predictions.db
+data/*.db
+*.log
