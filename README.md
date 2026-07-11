@@ -98,8 +98,25 @@ docker run --rm -p 8000:8000 -v "$(pwd)/data:/app/data" diabetes-api
 | `GET` | `/health` | API, modelo, base de datos y orden de variables. |
 | `GET` | `/model/metrics` | Metricas generadas por entrenamiento. |
 | `POST` | `/predict` | Prediccion y guardado en historial. |
+| `POST` | `/predictions` | Crea una evaluacion. Alternativa explicita a `/predict`. |
 | `GET` | `/predictions?limit=20` | Historial con limite validado. |
+| `GET` | `/predictions/{id}` | Detalle de una evaluacion. |
+| `PUT` | `/predictions/{id}` | Edita los ocho valores y recalcula la evaluacion. |
+| `DELETE` | `/predictions/{id}` | Borra una evaluacion. |
 | `DELETE` | `/predictions` | Borra todo el historial. |
+| `POST` | `/profile` | Crea el perfil academico de usuario unico. |
+| `GET` | `/profile` | Consulta el perfil. |
+| `PUT` | `/profile` | Actualiza alias, edad o preferencias. |
+| `DELETE` | `/profile` | Elimina el perfil. |
+
+## CRUD Academico
+
+La entrega expone dos entidades persistidas en SQLite:
+
+1. **Evaluaciones**: cada prediccion guardada. `POST /predict` o `POST /predictions` crea, `GET /predictions` lista, `GET /predictions/{id}` consulta detalle, `PUT /predictions/{id}` actualiza los ocho indicadores y recalcula el resultado con el modelo, y `DELETE` elimina uno o todos los registros.
+2. **Perfil**: perfil academico minimo de usuario unico. Incluye `alias` opcional, `age` opcional, `preferred_theme`, `text_scale`, `created_at` y `updated_at`. No guarda DNI, correo, telefono, direccion, credenciales ni historias clinicas.
+
+Al editar una evaluacion no se permite modificar manualmente `prediction`, `risk`, `probability`, `message` ni `recommendation`; esos campos se recalculan desde el pipeline cargado.
 
 ## Ejemplo `/predict`
 
@@ -132,13 +149,41 @@ Response:
   "recommendation": "Se recomienda solicitar orientacion profesional y revisar habitos de alimentacion, actividad fisica y controles preventivos.",
   "model_name": "Arbol de Decision",
   "model_version": "1.0.0",
-  "created_at": "2026-07-10T14:35:27.378427+00:00"
+  "created_at": "2026-07-10T14:35:27.378427+00:00",
+  "updated_at": "2026-07-10T14:35:27.378427+00:00"
+}
+```
+
+## Ejemplo `/profile`
+
+Request:
+
+```json
+{
+  "alias": "Estudiante",
+  "age": 25,
+  "preferred_theme": "system",
+  "text_scale": 1.0
+}
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "alias": "Estudiante",
+  "age": 25,
+  "preferred_theme": "system",
+  "text_scale": 1.0,
+  "created_at": "2026-07-11T10:00:00+00:00",
+  "updated_at": "2026-07-11T10:00:00+00:00"
 }
 ```
 
 ## Historial y Privacidad
 
-SQLite se usa con fines academicos. No se almacenan nombres, DNI, correo ni identificadores personales. El endpoint `DELETE /predictions` elimina el historial completo.
+SQLite se usa con fines academicos. No se almacenan DNI, correo, telefono, direccion, credenciales ni identificadores personales fuertes. El endpoint `DELETE /predictions` elimina el historial completo y `DELETE /profile` elimina el perfil academico.
 
 ## Pruebas
 
@@ -149,5 +194,5 @@ pytest -q
 Resultado verificado:
 
 ```text
-10 passed, 1 warning
+23 passed, 1 warning
 ```

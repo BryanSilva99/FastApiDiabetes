@@ -9,18 +9,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.config import get_settings
 from api.database import (
     database_available,
+    delete_prediction,
     delete_predictions,
+    delete_profile,
+    get_prediction,
+    get_profile,
     init_database,
     list_predictions,
     save_prediction,
+    save_profile,
+    update_prediction,
+    update_profile,
 )
 from api.schemas import (
+    DeleteResponse,
     DeleteHistoryResponse,
     DiabetesInput,
     HealthResponse,
     MetricsResponse,
+    PredictionHistoryItem,
     PredictionResponse,
     PredictionsResponse,
+    ProfileCreateRequest,
+    ProfileResponse,
+    ProfileUpdateRequest,
     RootResponse,
 )
 from api.services.model_service import model_service
@@ -91,6 +103,23 @@ def predictions(
         ) from exc
 
 
+@app.get("/predictions/{prediction_id}", response_model=PredictionHistoryItem, summary="Consultar detalle de una prediccion")
+def prediction_detail(prediction_id: int):
+    try:
+        prediction = get_prediction(prediction_id)
+    except Exception as exc:
+        logger.exception("Error consultando prediccion %s: %s", prediction_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo consultar la base de datos.",
+        ) from exc
+
+    if prediction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prediccion no encontrada.")
+
+    return prediction
+
+
 @app.delete("/predictions", response_model=DeleteHistoryResponse, summary="Eliminar historial completo")
 def clear_predictions():
     try:
@@ -104,8 +133,7 @@ def clear_predictions():
         ) from exc
 
 
-@app.post("/predict", response_model=PredictionResponse, summary="Estimar riesgo referencial de diabetes")
-def predict(data: DiabetesInput):
+def _run_prediction(data: DiabetesInput):
     if not model_service.loaded:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -127,5 +155,116 @@ def predict(data: DiabetesInput):
     return {
         "id": saved["id"],
         "created_at": saved["created_at"],
+        "updated_at": saved["updated_at"],
         **result,
     }
+
+
+@app.post("/predict", response_model=PredictionResponse, summary="Estimar riesgo referencial de diabetes")
+def predict(data: DiabetesInput):
+    return _run_prediction(data)
+
+
+@app.post("/predictions", response_model=PredictionResponse, status_code=status.HTTP_201_CREATED, summary="Crear una evaluacion")
+def create_prediction(data: DiabetesInput):
+    return _run_prediction(data)
+
+
+@app.put("/predictions/{prediction_id}", response_model=PredictionHistoryItem, summary="Editar y recalcular una prediccion")
+def edit_prediction(prediction_id: int, data: DiabetesInput):
+    if not model_service.loaded:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El modelo de prediccion no esta disponible.",
+        )
+
+    payload = data.model_dump()
+
+    try:
+        if get_prediction(prediction_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prediccion no encontrada.")
+
+        result = model_service.predict(payload)
+        updated = update_prediction(prediction_id, payload, result)
+    except HTTPException:
+        raise
+    except KeyError as exc:
+        logger.exception("Orden de caracteristicas inconsistente: %s", exc)
+        raise HTTPException(status_code=500, detail="Error interno en el orden de caracteristicas.") from exc
+    except Exception as exc:
+        logger.exception("Error actualizando prediccion: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo actualizar la prediccion.") from exc
+
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prediccion no encontrada.")
+
+    return updated
+
+
+@app.delete("/predictions/{prediction_id}", response_model=DeleteResponse, summary="Eliminar una prediccion")
+def remove_prediction(prediction_id: int):
+    try:
+        deleted = delete_prediction(prediction_id)
+    except Exception as exc:
+        logger.exception("Error eliminando prediccion %s: %s", prediction_id, exc)
+        raise HTTPException(status_code=503, detail="No se pudo eliminar la prediccion.") from exc
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prediccion no encontrada.")
+
+    return {"deleted": True, "message": "Prediccion eliminada correctamente."}
+
+
+@app.post("/profile", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED, summary="Crear perfil academico")
+def create_profile(data: ProfileCreateRequest):
+    try:
+        if get_profile() is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe un perfil.")
+        return save_profile(data.model_dump())
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Error creando perfil: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo crear el perfil.") from exc
+
+
+@app.get("/profile", response_model=ProfileResponse, summary="Consultar perfil academico")
+def read_profile():
+    try:
+        profile = get_profile()
+    except Exception as exc:
+        logger.exception("Error consultando perfil: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo consultar el perfil.") from exc
+
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado.")
+
+    return profile
+
+
+@app.put("/profile", response_model=ProfileResponse, summary="Actualizar perfil academico")
+def edit_profile(data: ProfileUpdateRequest):
+    try:
+        profile = update_profile(data.model_dump(exclude_unset=True))
+    except Exception as exc:
+        logger.exception("Error actualizando perfil: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo actualizar el perfil.") from exc
+
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado.")
+
+    return profile
+
+
+@app.delete("/profile", response_model=DeleteResponse, summary="Eliminar perfil academico")
+def remove_profile():
+    try:
+        deleted = delete_profile()
+    except Exception as exc:
+        logger.exception("Error eliminando perfil: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo eliminar el perfil.") from exc
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado.")
+
+    return {"deleted": True, "message": "Perfil eliminado correctamente."}

@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 
 RiskLevel = Literal["bajo", "medio", "alto"]
+ThemePreference = Literal["system", "light", "dark"]
 
 
 class DiabetesInput(BaseModel):
@@ -28,6 +29,7 @@ class PredictionResponse(BaseModel):
     model_name: str
     model_version: str
     created_at: str
+    updated_at: str | None = None
 
 
 class PredictionHistoryItem(PredictionResponse):
@@ -48,6 +50,35 @@ class PredictionsResponse(BaseModel):
 class DeleteHistoryResponse(BaseModel):
     deleted: int
     message: str
+
+
+class DeleteResponse(BaseModel):
+    deleted: bool
+    message: str
+
+
+class ProfileBase(BaseModel):
+    alias: str | None = Field(default=None, max_length=40, description="Alias opcional sin datos sensibles")
+    age: int | None = Field(default=None, ge=1, le=120, description="Edad general opcional")
+    preferred_theme: ThemePreference = Field(default="system", description="Preferencia visual")
+    text_scale: float = Field(default=1.0, ge=0.8, le=1.4, description="Escala de texto preferida")
+
+
+class ProfileCreateRequest(ProfileBase):
+    pass
+
+
+class ProfileUpdateRequest(BaseModel):
+    alias: str | None = Field(default=None, max_length=40)
+    age: int | None = Field(default=None, ge=1, le=120)
+    preferred_theme: ThemePreference | None = None
+    text_scale: float | None = Field(default=None, ge=0.8, le=1.4)
+
+
+class ProfileResponse(ProfileBase):
+    id: int
+    created_at: str
+    updated_at: str
 
 
 class HealthResponse(BaseModel):

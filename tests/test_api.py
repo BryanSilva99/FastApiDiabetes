@@ -85,6 +85,63 @@ def test_prediction_is_saved(client: TestClient):
     assert len(response.json()["predictions"]) == 1
 
 
+def test_prediction_detail_returns_saved_record(client: TestClient):
+    create_response = client.post("/predict", json=VALID_PAYLOAD)
+    prediction_id = create_response.json()["id"]
+
+    response = client.get(f"/predictions/{prediction_id}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == prediction_id
+    assert response.json()["glucose"] == VALID_PAYLOAD["Glucose"]
+
+
+def test_create_prediction_endpoint_alias(client: TestClient):
+    response = client.post("/predictions", json=VALID_PAYLOAD)
+
+    assert response.status_code == 201
+    assert response.json()["id"] > 0
+
+
+def test_update_prediction_recalculates_and_preserves_id(client: TestClient):
+    create_response = client.post("/predict", json=VALID_PAYLOAD)
+    prediction_id = create_response.json()["id"]
+    payload = {**VALID_PAYLOAD, "Glucose": 140, "BMI": 30.1}
+
+    response = client.put(f"/predictions/{prediction_id}", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == prediction_id
+    assert data["glucose"] == 140
+    assert data["bmi"] == 30.1
+    assert "updated_at" in data
+
+
+def test_update_prediction_not_found_returns_404(client: TestClient):
+    response = client.put("/predictions/999999", json=VALID_PAYLOAD)
+
+    assert response.status_code == 404
+
+
+def test_delete_one_prediction(client: TestClient):
+    create_response = client.post("/predict", json=VALID_PAYLOAD)
+    prediction_id = create_response.json()["id"]
+
+    delete_response = client.delete(f"/predictions/{prediction_id}")
+    detail_response = client.get(f"/predictions/{prediction_id}")
+
+    assert delete_response.status_code == 200
+    assert delete_response.json()["deleted"] is True
+    assert detail_response.status_code == 404
+
+
+def test_delete_prediction_not_found_returns_404(client: TestClient):
+    response = client.delete("/predictions/999999")
+
+    assert response.status_code == 404
+
+
 def test_predictions_respects_limit(client: TestClient):
     client.post("/predict", json=VALID_PAYLOAD)
     client.post("/predict", json={**VALID_PAYLOAD, "Age": 55})
@@ -121,3 +178,70 @@ def test_model_unavailable_returns_503(client: TestClient):
         model_service.model = original_model
 
     assert response.status_code == 503
+
+
+def test_create_profile(client: TestClient):
+    response = client.post(
+        "/profile",
+        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["alias"] == "Demo"
+
+
+def test_get_profile(client: TestClient):
+    client.post(
+        "/profile",
+        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+    )
+
+    response = client.get("/profile")
+
+    assert response.status_code == 200
+    assert response.json()["preferred_theme"] == "system"
+
+
+def test_get_profile_not_found_returns_404(client: TestClient):
+    response = client.get("/profile")
+
+    assert response.status_code == 404
+
+
+def test_update_profile(client: TestClient):
+    client.post(
+        "/profile",
+        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+    )
+
+    response = client.put("/profile", json={"alias": "Demo editado", "preferred_theme": "dark", "text_scale": 1.1})
+
+    assert response.status_code == 200
+    assert response.json()["alias"] == "Demo editado"
+    assert response.json()["preferred_theme"] == "dark"
+
+
+def test_update_profile_not_found_returns_404(client: TestClient):
+    response = client.put("/profile", json={"alias": "Demo"})
+
+    assert response.status_code == 404
+
+
+def test_delete_profile(client: TestClient):
+    client.post(
+        "/profile",
+        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+    )
+
+    delete_response = client.delete("/profile")
+    get_response = client.get("/profile")
+
+    assert delete_response.status_code == 200
+    assert delete_response.json()["deleted"] is True
+    assert get_response.status_code == 404
+
+
+def test_profile_validation_returns_422(client: TestClient):
+    response = client.post("/profile", json={"age": 999, "preferred_theme": "light", "text_scale": 1.0})
+
+    assert response.status_code == 422
