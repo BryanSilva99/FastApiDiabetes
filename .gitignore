@@ -1,13 +1,14 @@
 env/
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .env
 .env.*
 !.env.example
+coverage/
 data/predictions.db
 data/*.db
 *.log

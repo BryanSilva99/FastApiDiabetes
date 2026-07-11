@@ -1,64 +1,120 @@
 # Diabetes Risk API
 
-Backend academico con FastAPI, SQLite y scikit-learn para estimar de forma referencial el riesgo de diabetes.
+Backend academico desarrollado con FastAPI, SQLite y scikit-learn para estimar de forma referencial el riesgo de diabetes.
 
-> No es un diagnostico medico ni reemplaza una evaluacion profesional.
+> Advertencia medica: esta API no entrega diagnosticos medicos ni reemplaza una evaluacion profesional.
+
+## Nombre Real De Carpeta
+
+En el workspace local, el backend esta en:
+
+```text
+/home/bryan/Documentos/Escritorio/SOFTMOVIL/FastApi
+```
+
+El remoto configurado apunta a `BryanSilva99/FastApiDiabetes.git`.
 
 ## Tecnologias
 
-- FastAPI
-- Pydantic
-- SQLite
-- pandas
-- scikit-learn
-- pytest
+- FastAPI.
+- Pydantic.
+- SQLite.
+- pandas.
+- scikit-learn.
+- joblib.
+- pytest.
+- Uvicorn.
 
-## Variables del Modelo
+## Estructura
+
+```text
+api/
+  config.py              configuracion por variables de entorno
+  database.py            SQLite, migraciones simples y CRUD
+  main.py                endpoints FastAPI
+  schemas.py             modelos Pydantic
+  services/
+    model_service.py     carga del modelo y prediccion
+model/
+  model.pkl              pipeline entrenado
+  model_metadata.json    metadata del modelo
+  metrics.csv/json       metricas del entrenamiento
+  confusion_matrix.json
+  roc_curve.csv
+  train.py
+data/
+  diabetes.csv           dataset
+tests/
+  test_api.py            pruebas con TestClient y base temporal
+```
+
+## Variables Del Modelo
 
 Orden obligatorio:
 
-`Pregnancies`, `Glucose`, `BloodPressure`, `SkinThickness`, `Insulin`, `BMI`, `DiabetesPedigreeFunction`, `Age`.
+```text
+Pregnancies
+Glucose
+BloodPressure
+SkinThickness
+Insulin
+BMI
+DiabetesPedigreeFunction
+Age
+```
+
+El backend carga este orden desde `model/model_metadata.json`.
 
 ## Instalacion
 
 Linux:
 
 ```bash
+cd /home/bryan/Documentos/Escritorio/SOFTMOVIL/FastApi
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Windows:
+Windows PowerShell:
 
 ```powershell
+cd C:\ruta\al\proyecto\FastApi
 python -m venv .venv
-.\.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-## Entrenamiento
+Windows CMD:
 
-```bash
-python model/train.py
+```bat
+cd C:\ruta\al\proyecto\FastApi
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
 ```
 
-Genera:
+## Variables De Entorno
 
-- `model/model.pkl`
-- `model/model_metadata.json`
-- `model/metrics.csv`
-- `model/metrics.json`
-- `model/confusion_matrix.json`
-- `model/roc_curve.csv`
+Copiar `.env.example` a `.env` si se quiere personalizar:
 
-Modelo seleccionado: `Arbol de Decision` v`1.0.0`.
+```env
+API_TITLE=Diabetes Risk API
+API_VERSION=1.1.0
+CORS_ORIGINS=*
+MODEL_PATH=model/model.pkl
+METADATA_PATH=model/model_metadata.json
+METRICS_PATH=model/metrics.csv
+DATABASE_PATH=data/predictions.db
+HISTORY_DEFAULT_LIMIT=20
+HISTORY_MAX_LIMIT=100
+```
 
-| Accuracy | Precision | Recall | F1 | ROC-AUC |
-| ---: | ---: | ---: | ---: | ---: |
-| 0.7597 | 0.6393 | 0.7222 | 0.6783 | 0.7622 |
+`CORS_ORIGINS=*` es aceptable para desarrollo local. En despliegue debe reemplazarse por origenes concretos.
 
-## Ejecucion
+## Ejecucion Local
+
+Con entorno activado:
 
 ```bash
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
@@ -70,53 +126,104 @@ Swagger:
 http://localhost:8000/docs
 ```
 
-## Variables de Entorno
+Health:
 
-Copiar `.env.example` a `.env` si se quiere personalizar:
-
-```env
-CORS_ORIGINS=*
-DATABASE_PATH=data/predictions.db
-MODEL_PATH=model/model.pkl
-METADATA_PATH=model/model_metadata.json
+```text
+http://localhost:8000/health
 ```
 
-`CORS_ORIGINS=*` queda permitido solo para desarrollo local. En despliegue usar dominios concretos.
+## SQLite
 
-## Docker
+La base por defecto se ubica en:
+
+```text
+data/predictions.db
+```
+
+Esta base no debe versionarse. Se ignora mediante `.gitignore`.
+
+Tablas:
+
+- `predictions`: evaluaciones y resultados calculados.
+- `profile`: perfil academico de usuario unico.
+
+## Metadata Del Modelo
+
+Archivo:
+
+```text
+model/model_metadata.json
+```
+
+Contiene nombre, version, orden de caracteristicas, umbral, metricas principales y decisiones de entrenamiento.
+
+## Entrenamiento
 
 ```bash
-docker build -t diabetes-api .
-docker run --rm -p 8000:8000 -v "$(pwd)/data:/app/data" diabetes-api
+python model/train.py
 ```
+
+Genera o actualiza:
+
+- `model/model.pkl`
+- `model/model_metadata.json`
+- `model/metrics.csv`
+- `model/metrics.json`
+- `model/confusion_matrix.json`
+- `model/roc_curve.csv`
+
+Modelo documentado actualmente:
+
+```text
+Arbol de Decision v1.0.0
+```
+
+Metricas registradas:
+
+| Accuracy | Precision | Recall | F1 | ROC-AUC |
+| ---: | ---: | ---: | ---: | ---: |
+| 0.7597 | 0.6393 | 0.7222 | 0.6783 | 0.7622 |
 
 ## Endpoints
 
 | Metodo | Endpoint | Descripcion |
 | --- | --- | --- |
 | `GET` | `/` | Estado basico. |
-| `GET` | `/health` | API, modelo, base de datos y orden de variables. |
-| `GET` | `/model/metrics` | Metricas generadas por entrenamiento. |
-| `POST` | `/predict` | Prediccion y guardado en historial. |
-| `POST` | `/predictions` | Crea una evaluacion. Alternativa explicita a `/predict`. |
-| `GET` | `/predictions?limit=20` | Historial con limite validado. |
-| `GET` | `/predictions/{id}` | Detalle de una evaluacion. |
-| `PUT` | `/predictions/{id}` | Edita los ocho valores y recalcula la evaluacion. |
-| `DELETE` | `/predictions/{id}` | Borra una evaluacion. |
-| `DELETE` | `/predictions` | Borra todo el historial. |
-| `POST` | `/profile` | Crea el perfil academico de usuario unico. |
-| `GET` | `/profile` | Consulta el perfil. |
-| `PUT` | `/profile` | Actualiza alias, edad o preferencias. |
-| `DELETE` | `/profile` | Elimina el perfil. |
+| `GET` | `/health` | Estado de API, modelo, base y orden de variables. |
+| `GET` | `/model/metrics` | Metricas del entrenamiento. |
+| `POST` | `/predict` | Crea evaluacion y calcula riesgo. |
+| `POST` | `/predictions` | Crea evaluacion; alias explicito de creacion. |
+| `GET` | `/predictions?limit=20` | Lista historial con limite validado. |
+| `GET` | `/predictions/{id}` | Consulta detalle de evaluacion. |
+| `PUT` | `/predictions/{id}` | Actualiza ocho valores y recalcula. |
+| `DELETE` | `/predictions/{id}` | Elimina una evaluacion. |
+| `DELETE` | `/predictions` | Elimina todo el historial. |
+| `POST` | `/profile` | Crea perfil academico. |
+| `GET` | `/profile` | Consulta perfil. |
+| `PUT` | `/profile` | Actualiza perfil. |
+| `DELETE` | `/profile` | Elimina perfil. |
 
-## CRUD Academico
+## CRUD De Evaluaciones
 
-La entrega expone dos entidades persistidas en SQLite:
+- Create: `POST /predict` o `POST /predictions`.
+- Read: `GET /predictions`, `GET /predictions/{id}`.
+- Update: `PUT /predictions/{id}`.
+- Delete: `DELETE /predictions/{id}`, `DELETE /predictions`.
 
-1. **Evaluaciones**: cada prediccion guardada. `POST /predict` o `POST /predictions` crea, `GET /predictions` lista, `GET /predictions/{id}` consulta detalle, `PUT /predictions/{id}` actualiza los ocho indicadores y recalcula el resultado con el modelo, y `DELETE` elimina uno o todos los registros.
-2. **Perfil**: perfil academico minimo de usuario unico. Incluye `alias` opcional, `age` opcional, `preferred_theme`, `text_scale`, `created_at` y `updated_at`. No guarda DNI, correo, telefono, direccion, credenciales ni historias clinicas.
+Al actualizar una evaluacion, el backend recalcula `prediction`, `risk`, `probability`, `risk_percentage`, `message` y `recommendation`. No se aceptan ediciones manuales de esos campos.
 
-Al editar una evaluacion no se permite modificar manualmente `prediction`, `risk`, `probability`, `message` ni `recommendation`; esos campos se recalculan desde el pipeline cargado.
+## CRUD De Perfil
+
+Perfil academico minimo:
+
+- `alias`: opcional.
+- `age`: opcional.
+- `preferred_theme`: `system`, `light` o `dark`.
+- `text_scale`: 0.8 a 1.4.
+- `created_at`.
+- `updated_at`.
+
+No guarda DNI, correo, telefono, direccion, credenciales ni datos clinicos adicionales.
 
 ## Ejemplo `/predict`
 
@@ -146,7 +253,7 @@ Response:
   "risk_percentage": 51.69,
   "threshold": 0.5,
   "message": "Riesgo alto estimado por el modelo",
-  "recommendation": "Se recomienda solicitar orientacion profesional y revisar habitos de alimentacion, actividad fisica y controles preventivos.",
+  "recommendation": "Consulta con un profesional de salud para una evaluacion preventiva.",
   "model_name": "Arbol de Decision",
   "model_version": "1.0.0",
   "created_at": "2026-07-10T14:35:27.378427+00:00",
@@ -167,32 +274,58 @@ Request:
 }
 ```
 
-Response:
+## Docker
 
-```json
-{
-  "id": 1,
-  "alias": "Estudiante",
-  "age": 25,
-  "preferred_theme": "system",
-  "text_scale": 1.0,
-  "created_at": "2026-07-11T10:00:00+00:00",
-  "updated_at": "2026-07-11T10:00:00+00:00"
-}
+Existe `Dockerfile`.
+
+Construir:
+
+```bash
+docker build -t diabetes-api .
 ```
 
-## Historial y Privacidad
+Ejecutar con persistencia de SQLite:
 
-SQLite se usa con fines academicos. No se almacenan DNI, correo, telefono, direccion, credenciales ni identificadores personales fuertes. El endpoint `DELETE /predictions` elimina el historial completo y `DELETE /profile` elimina el perfil academico.
+```bash
+docker run --rm -p 8000:8000 -v "$(pwd)/data:/app/data" diabetes-api
+```
+
+En Windows PowerShell:
+
+```powershell
+docker run --rm -p 8000:8000 -v "${PWD}\data:/app/data" diabetes-api
+```
+
+## Despliegue
+
+Para VPS se recomienda:
+
+- usar entorno virtual o Docker;
+- exponer Uvicorn detras de Nginx;
+- configurar HTTPS;
+- definir `CORS_ORIGINS` con el dominio real;
+- persistir `data/predictions.db`.
 
 ## Pruebas
+
+Con entorno activado:
 
 ```bash
 pytest -q
 ```
 
-Resultado verificado:
+Resultado real ejecutado:
 
 ```text
 23 passed, 1 warning
 ```
+
+El warning actual proviene de Starlette/TestClient recomendando `httpx2`.
+
+## Limitaciones
+
+- API academica sin autenticacion.
+- No administra historias clinicas.
+- SQLite se usa con fines academicos.
+- La estimacion depende del dataset y modelo entrenado.
+- No reemplaza criterio medico profesional.
