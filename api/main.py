@@ -11,15 +11,15 @@ from api.database import (
     database_available,
     delete_prediction,
     delete_predictions,
-    delete_profile,
+    delete_preferences,
     get_prediction,
-    get_profile,
+    get_preferences,
     init_database,
     list_predictions,
     save_prediction,
-    save_profile,
+    save_preferences,
     update_prediction,
-    update_profile,
+    update_preferences,
 )
 from api.schemas import (
     DeleteResponse,
@@ -27,12 +27,12 @@ from api.schemas import (
     DiabetesInput,
     HealthResponse,
     MetricsResponse,
+    PreferencesCreateRequest,
+    PreferencesResponse,
+    PreferencesUpdateRequest,
     PredictionHistoryItem,
     PredictionResponse,
     PredictionsResponse,
-    ProfileCreateRequest,
-    ProfileResponse,
-    ProfileUpdateRequest,
     RootResponse,
 )
 from api.services.model_service import model_service
@@ -215,56 +215,56 @@ def remove_prediction(prediction_id: int):
     return {"deleted": True, "message": "Prediccion eliminada correctamente."}
 
 
-@app.post("/profile", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED, summary="Crear perfil academico")
-def create_profile(data: ProfileCreateRequest):
+@app.post("/preferences", response_model=PreferencesResponse, status_code=status.HTTP_201_CREATED, summary="Crear preferencias")
+def create_preferences(data: PreferencesCreateRequest):
     try:
-        if get_profile() is not None:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe un perfil.")
-        return save_profile(data.model_dump())
+        if get_preferences() is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existen preferencias.")
+        return save_preferences(data.model_dump())
     except HTTPException:
         raise
     except Exception as exc:
-        logger.exception("Error creando perfil: %s", exc)
-        raise HTTPException(status_code=503, detail="No se pudo crear el perfil.") from exc
+        logger.exception("Error creando preferencias: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo crear las preferencias.") from exc
 
 
-@app.get("/profile", response_model=ProfileResponse, summary="Consultar perfil academico")
-def read_profile():
+@app.get("/preferences", response_model=PreferencesResponse, summary="Consultar preferencias")
+def read_preferences():
     try:
-        profile = get_profile()
+        preferences = get_preferences()
     except Exception as exc:
-        logger.exception("Error consultando perfil: %s", exc)
-        raise HTTPException(status_code=503, detail="No se pudo consultar el perfil.") from exc
+        logger.exception("Error consultando preferencias: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo consultar las preferencias.") from exc
 
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado.")
+    if preferences is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preferencias no encontradas.")
 
-    return profile
+    return preferences
 
 
-@app.put("/profile", response_model=ProfileResponse, summary="Actualizar perfil academico")
-def edit_profile(data: ProfileUpdateRequest):
+@app.put("/preferences", response_model=PreferencesResponse, summary="Actualizar preferencias")
+def edit_preferences(data: PreferencesUpdateRequest):
     try:
-        profile = update_profile(data.model_dump(exclude_unset=True))
+        preferences = update_preferences(data.model_dump(exclude_unset=True))
     except Exception as exc:
-        logger.exception("Error actualizando perfil: %s", exc)
-        raise HTTPException(status_code=503, detail="No se pudo actualizar el perfil.") from exc
+        logger.exception("Error actualizando preferencias: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo actualizar las preferencias.") from exc
 
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado.")
+    if preferences is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preferencias no encontradas.")
 
-    return profile
+    return preferences
 
 
-@app.delete("/profile", response_model=DeleteResponse, summary="Eliminar perfil academico")
-def remove_profile():
+@app.delete("/preferences", response_model=DeleteResponse, summary="Restaurar preferencias predeterminadas")
+def remove_preferences():
     try:
-        deleted = delete_profile()
+        deleted = delete_preferences()
     except Exception as exc:
-        logger.exception("Error eliminando perfil: %s", exc)
-        raise HTTPException(status_code=503, detail="No se pudo eliminar el perfil.") from exc
+        logger.exception("Error eliminando preferencias: %s", exc)
+        raise HTTPException(status_code=503, detail="No se pudo restaurar las preferencias.") from exc
 
     if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Preferencias no encontradas.")
 
-    return {"deleted": True, "message": "Perfil eliminado correctamente."}
+    return {"deleted": True, "message": "Configuracion predeterminada restaurada."}

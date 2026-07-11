@@ -50,12 +50,10 @@ def init_database():
         )
         connection.execute(
             """
-            CREATE TABLE IF NOT EXISTS profile (
+            CREATE TABLE IF NOT EXISTS preferences (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
-                alias TEXT,
-                age INTEGER,
-                preferred_theme TEXT NOT NULL DEFAULT 'system',
-                text_scale REAL NOT NULL DEFAULT 1.0,
+                theme TEXT NOT NULL DEFAULT 'light',
+                text_size TEXT NOT NULL DEFAULT 'normal',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
@@ -262,12 +260,12 @@ def delete_predictions() -> int:
         return int(cursor.rowcount)
 
 
-def get_profile() -> dict[str, Any] | None:
+def get_preferences() -> dict[str, Any] | None:
     with get_connection() as connection:
         row = connection.execute(
             """
-            SELECT id, alias, age, preferred_theme, text_scale, created_at, updated_at
-            FROM profile
+            SELECT id, theme, text_size, created_at, updated_at
+            FROM preferences
             WHERE id = 1
             """
         ).fetchone()
@@ -275,63 +273,57 @@ def get_profile() -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
-def save_profile(payload: dict[str, Any]) -> dict[str, Any]:
+def save_preferences(payload: dict[str, Any]) -> dict[str, Any]:
     now = datetime.now(timezone.utc).isoformat()
     with get_connection() as connection:
         connection.execute(
             """
-            INSERT INTO profile (id, alias, age, preferred_theme, text_scale, created_at, updated_at)
-            VALUES (1, ?, ?, ?, ?, ?, ?)
+            INSERT INTO preferences (id, theme, text_size, created_at, updated_at)
+            VALUES (1, ?, ?, ?, ?)
             """,
             (
-                payload.get("alias"),
-                payload.get("age"),
-                payload["preferred_theme"],
-                payload["text_scale"],
+                payload["theme"],
+                payload["text_size"],
                 now,
                 now,
             ),
         )
 
-    profile = get_profile()
-    if profile is None:
-        raise RuntimeError("No se pudo guardar el perfil")
-    return profile
+    preferences = get_preferences()
+    if preferences is None:
+        raise RuntimeError("No se pudo guardar las preferencias")
+    return preferences
 
 
-def update_profile(payload: dict[str, Any]) -> dict[str, Any] | None:
-    current = get_profile()
+def update_preferences(payload: dict[str, Any]) -> dict[str, Any] | None:
+    current = get_preferences()
     if current is None:
         return None
 
     updated = {
-        "alias": payload.get("alias", current["alias"]),
-        "age": payload.get("age", current["age"]),
-        "preferred_theme": payload.get("preferred_theme", current["preferred_theme"]),
-        "text_scale": payload.get("text_scale", current["text_scale"]),
+        "theme": payload.get("theme", current["theme"]),
+        "text_size": payload.get("text_size", current["text_size"]),
     }
     updated_at = datetime.now(timezone.utc).isoformat()
 
     with get_connection() as connection:
         connection.execute(
             """
-            UPDATE profile
-            SET alias = ?, age = ?, preferred_theme = ?, text_scale = ?, updated_at = ?
+            UPDATE preferences
+            SET theme = ?, text_size = ?, updated_at = ?
             WHERE id = 1
             """,
             (
-                updated["alias"],
-                updated["age"],
-                updated["preferred_theme"],
-                updated["text_scale"],
+                updated["theme"],
+                updated["text_size"],
                 updated_at,
             ),
         )
 
-    return get_profile()
+    return get_preferences()
 
 
-def delete_profile() -> bool:
+def delete_preferences() -> bool:
     with get_connection() as connection:
-        cursor = connection.execute("DELETE FROM profile WHERE id = 1")
+        cursor = connection.execute("DELETE FROM preferences WHERE id = 1")
         return cursor.rowcount > 0

@@ -180,68 +180,69 @@ def test_model_unavailable_returns_503(client: TestClient):
     assert response.status_code == 503
 
 
-def test_create_profile(client: TestClient):
+def test_create_preferences(client: TestClient):
     response = client.post(
-        "/profile",
-        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+        "/preferences",
+        json={"theme": "light", "text_size": "normal"},
     )
 
     assert response.status_code == 201
-    assert response.json()["alias"] == "Demo"
+    assert response.json()["theme"] == "light"
+    assert response.json()["text_size"] == "normal"
 
 
-def test_get_profile(client: TestClient):
+def test_get_preferences(client: TestClient):
     client.post(
-        "/profile",
-        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+        "/preferences",
+        json={"theme": "light", "text_size": "normal"},
     )
 
-    response = client.get("/profile")
+    response = client.get("/preferences")
 
     assert response.status_code == 200
-    assert response.json()["preferred_theme"] == "system"
+    assert response.json()["theme"] == "light"
 
 
-def test_get_profile_not_found_returns_404(client: TestClient):
-    response = client.get("/profile")
+def test_get_preferences_not_found_returns_404(client: TestClient):
+    response = client.get("/preferences")
 
     assert response.status_code == 404
 
 
-def test_update_profile(client: TestClient):
+def test_update_preferences(client: TestClient):
     client.post(
-        "/profile",
-        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+        "/preferences",
+        json={"theme": "light", "text_size": "normal"},
     )
 
-    response = client.put("/profile", json={"alias": "Demo editado", "preferred_theme": "dark", "text_scale": 1.1})
+    response = client.put("/preferences", json={"theme": "dark", "text_size": "large"})
 
     assert response.status_code == 200
-    assert response.json()["alias"] == "Demo editado"
-    assert response.json()["preferred_theme"] == "dark"
+    assert response.json()["theme"] == "dark"
+    assert response.json()["text_size"] == "large"
 
 
-def test_update_profile_not_found_returns_404(client: TestClient):
-    response = client.put("/profile", json={"alias": "Demo"})
+def test_update_preferences_not_found_returns_404(client: TestClient):
+    response = client.put("/preferences", json={"theme": "dark"})
 
     assert response.status_code == 404
 
 
-def test_delete_profile(client: TestClient):
+def test_delete_preferences(client: TestClient):
     client.post(
-        "/profile",
-        json={"alias": "Demo", "age": 25, "preferred_theme": "system", "text_scale": 1.0},
+        "/preferences",
+        json={"theme": "dark", "text_size": "large"},
     )
 
-    delete_response = client.delete("/profile")
-    get_response = client.get("/profile")
+    delete_response = client.delete("/preferences")
+    get_response = client.get("/preferences")
 
     assert delete_response.status_code == 200
     assert delete_response.json()["deleted"] is True
     assert get_response.status_code == 404
 
 
-def test_profile_validation_returns_422(client: TestClient):
-    response = client.post("/profile", json={"age": 999, "preferred_theme": "light", "text_scale": 1.0})
+def test_preferences_validation_returns_422(client: TestClient):
+    response = client.post("/preferences", json={"theme": "system", "text_size": "huge"})
 
     assert response.status_code == 422

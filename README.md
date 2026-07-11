@@ -145,7 +145,7 @@ Esta base no debe versionarse. Se ignora mediante `.gitignore`.
 Tablas:
 
 - `predictions`: evaluaciones y resultados calculados.
-- `profile`: perfil academico de usuario unico.
+- `preferences`: tema y tamano de texto de la instalacion anonima.
 
 ## Metadata Del Modelo
 
@@ -198,10 +198,10 @@ Metricas registradas:
 | `PUT` | `/predictions/{id}` | Actualiza ocho valores y recalcula. |
 | `DELETE` | `/predictions/{id}` | Elimina una evaluacion. |
 | `DELETE` | `/predictions` | Elimina todo el historial. |
-| `POST` | `/profile` | Crea perfil academico. |
-| `GET` | `/profile` | Consulta perfil. |
-| `PUT` | `/profile` | Actualiza perfil. |
-| `DELETE` | `/profile` | Elimina perfil. |
+| `POST` | `/preferences` | Crea preferencias. |
+| `GET` | `/preferences` | Consulta preferencias. |
+| `PUT` | `/preferences` | Actualiza preferencias. |
+| `DELETE` | `/preferences` | Restaura configuracion predeterminada. |
 
 ## CRUD De Evaluaciones
 
@@ -212,18 +212,16 @@ Metricas registradas:
 
 Al actualizar una evaluacion, el backend recalcula `prediction`, `risk`, `probability`, `risk_percentage`, `message` y `recommendation`. No se aceptan ediciones manuales de esos campos.
 
-## CRUD De Perfil
+## CRUD De Preferencias
 
-Perfil academico minimo:
+Preferencias anonimas de experiencia:
 
-- `alias`: opcional.
-- `age`: opcional.
-- `preferred_theme`: `system`, `light` o `dark`.
-- `text_scale`: 0.8 a 1.4.
+- `theme`: `light` o `dark`.
+- `text_size`: `normal` o `large`.
 - `created_at`.
 - `updated_at`.
 
-No guarda DNI, correo, telefono, direccion, credenciales ni datos clinicos adicionales.
+No guarda alias, edad, DNI, correo, telefono, direccion, credenciales ni datos clinicos adicionales.
 
 ## Ejemplo `/predict`
 
@@ -261,16 +259,14 @@ Response:
 }
 ```
 
-## Ejemplo `/profile`
+## Ejemplo `/preferences`
 
 Request:
 
 ```json
 {
-  "alias": "Estudiante",
-  "age": 25,
-  "preferred_theme": "system",
-  "text_scale": 1.0
+  "theme": "dark",
+  "text_size": "large"
 }
 ```
 

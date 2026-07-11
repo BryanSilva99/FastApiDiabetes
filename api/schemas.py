@@ -3,7 +3,8 @@ from pydantic import BaseModel, Field
 
 
 RiskLevel = Literal["bajo", "medio", "alto"]
-ThemePreference = Literal["system", "light", "dark"]
+AppTheme = Literal["light", "dark"]
+TextSizePreference = Literal["normal", "large"]
 
 
 class DiabetesInput(BaseModel):
@@ -57,25 +58,21 @@ class DeleteResponse(BaseModel):
     message: str
 
 
-class ProfileBase(BaseModel):
-    alias: str | None = Field(default=None, max_length=40, description="Alias opcional sin datos sensibles")
-    age: int | None = Field(default=None, ge=1, le=120, description="Edad general opcional")
-    preferred_theme: ThemePreference = Field(default="system", description="Preferencia visual")
-    text_scale: float = Field(default=1.0, ge=0.8, le=1.4, description="Escala de texto preferida")
+class PreferencesBase(BaseModel):
+    theme: AppTheme = Field(default="light", description="Tema visual de la aplicacion")
+    text_size: TextSizePreference = Field(default="normal", description="Tamano de texto preferido")
 
 
-class ProfileCreateRequest(ProfileBase):
+class PreferencesCreateRequest(PreferencesBase):
     pass
 
 
-class ProfileUpdateRequest(BaseModel):
-    alias: str | None = Field(default=None, max_length=40)
-    age: int | None = Field(default=None, ge=1, le=120)
-    preferred_theme: ThemePreference | None = None
-    text_scale: float | None = Field(default=None, ge=0.8, le=1.4)
+class PreferencesUpdateRequest(BaseModel):
+    theme: AppTheme | None = None
+    text_size: TextSizePreference | None = None
 
 
-class ProfileResponse(ProfileBase):
+class PreferencesResponse(PreferencesBase):
     id: int
     created_at: str
     updated_at: str
